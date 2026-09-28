@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Avalonia Trainer</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6fb;color:#171a22}
+.wrap{max-width:620px;margin:auto;padding:18px}
+.card{background:white;border-radius:22px;padding:22px;box-shadow:0 8px 30px #00000012;margin-top:14px}
+h1{font-size:28px;margin:8px 0 6px}.sub{color:#667085;margin-bottom:20px}
+button{width:100%;border:0;border-radius:15px;padding:16px;margin:7px 0;font-size:17px;font-weight:650;background:#eef1f7;color:#171a22}
+button.primary{background:#171a22;color:white}
+button:active{transform:scale(.99)}
+.top{display:flex;justify-content:space-between;color:#667085;font-size:14px}
+.q{font-size:22px;font-weight:750;line-height:1.25;margin:18px 0}
+.option{text-align:left;font-weight:500;background:white;border:2px solid #e1e5ec}
+.option.correct{background:#dcfce7;border-color:#22c55e}.option.wrong{background:#fee2e2;border-color:#ef4444}
+#result{font-size:25px;font-weight:800;margin:10px 0}
+.hidden{display:none}.small{font-size:14px;color:#667085}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="home" class="card">
+<h1>🧠 Avalonia Trainer</h1>
+<div class="sub">40 вопросов · режим зубрёжки · экзамен 20 × 15 сек</div>
+<button class="primary" id="studyBtn">📚 Зазубрить все 40</button>
+<button id="examBtn">🎯 Экзамен: 20 × 15 сек</button>
+</div>
+
+<div id="quiz" class="card hidden">
+<div class="top"><span id="counter"></span><span id="timer"></span></div>
+<div id="question" class="q"></div>
+<div id="options"></div>
+<div id="feedback" class="small"></div>
+<button class="primary hidden" id="nextBtn">Следующий →</button>
+</div>
+
+<div id="resultCard" class="card hidden">
+<div id="result"></div>
+<div id="mistakes" class="small"></div>
+<button class="primary" id="againBtn">Пройти ещё раз</button>
+<button id="homeBtn">На главную</button>
+</div>
+</div>
+
+<script>
+const data=[
+["Что такое Avalonia UI?","Фреймворк для кроссплатформенного UI .NET",["Язык программирования","Фреймворк для SQL","Только библиотека CSS"]],
+["Чем Avalonia отличается от WPF?","Avalonia кроссплатформенная, WPF — Windows-only",["Они полностью одинаковые","WPF работает на Linux и macOS","Avalonia только для Windows"]],
+["Какое расширение у разметки Avalonia?","\\.axaml",[".xaml",".xml",".avalonia"]],
+["Какой namespace используется для Avalonia?","xmlns=\"https://github.com/avaloniaui\"",["xmlns=\"wpf.com\"","xmlns=\"avalonia.net\"","xmlns=\"ui.com\""]],
+["В каком пакете находится DataGrid?","Avalonia.Controls.DataGrid",["Avalonia.DataGrid.Core","Avalonia.Grid","Microsoft.DataGrid"]],
+["Как подключить тему DataGrid?","StyleInclude в App.axaml",["Через SQL","Через NuGet без стиля","Через MainWindow только"]],
+["Что означает MVVM?","Model / View / ViewModel",["Main / Value / Model","Module / View / Method","Model / Visual / Main"]],
+["Что обычно хранится в Models?","Entity-классы и EF Core context",["Только XAML","Только команды UI","Только стили"]],
+["Что находится во View?","Только UI-разметка без логики",["SQL-запросы","Бизнес-логика","EF Core context"]],
+["Что находится во ViewModel?","Свойства и команды, привязанные к UI; здесь логика",["Только картинки","Только таблицы БД","Только CSS"]],
+["Как называется механизм связывания UI и ViewModel?","Binding",["Routing","Casting","Rendering"]],
+["Какой базовый класс часто используют с CommunityToolkit.Mvvm?","ObservableObject",["WindowObject","BindingObject","DataObject"]],
+["Что делает [ObservableProperty]?","Генерирует свойство с уведомлением об изменении",["Создаёт таблицу БД","Открывает окно","Удаляет свойство"]],
+["Что делает [RelayCommand]?","Превращает метод в команду, доступную для Binding",["Создаёт DataGrid","Создаёт БД","Меняет тему"]],
+["Зачем INotifyPropertyChanged?","Уведомлять UI об изменении свойств",["Для подключения PostgreSQL","Для открытия Window","Для маршрутизации"]],
+["Что будет при internal ViewModel + x:DataType?","Compiled binding не видит класс; страница/окно не откроется",["Всё работает идеально","Запускается PostgreSQL","DataGrid удаляется"]],
+["Зачем x:DataType?","Compiled bindings и проверка типов на этапе компиляции",["Для CSS","Для PostgreSQL","Для открытия диалога"]],
+["Что делает ObservableCollection?","Уведомляет UI о добавлении/удалении/замене элементов",["Только хранит строки","Создаёт БД","Открывает окно"]],
+["Какое свойство задаёт источник данных DataGrid?","ItemsSource",["DataSource","SourceItems","Rows"]],
+["Какая колонка показывает обычный текст?","DataGridTextColumn",["TextGridColumn","StringColumn","DataTextColumn"]],
+["Как получить выбранную строку DataGrid?","SelectedItem",["SelectedRowText","CurrentText","PickedRow"]],
+["Какое событие можно использовать для двойного клика?","DoubleTapped",["DoubleClickOnly","TwoClick","ClickedTwice"]],
+["Что такое DataContext?","Объект, свойства которого доступны для Binding",["Только SQL-соединение","Окно ОС","CSS-контейнер"]],
+["Какой элемент часто используют для отдельной страницы UI?","UserControl",["DatabaseControl","PageWindow","PanelPage"]],
+["Window и UserControl: разница?","Window — отдельное OS-окно, UserControl — встраиваемый элемент",["Они одинаковые","UserControl всегда отдельное окно","Window нельзя показать"]],
+["Что делает Show()?","Открывает немодальное окно и код продолжает выполняться",["Блокирует код до закрытия","Удаляет окно","Открывает БД"]],
+["Что делает ShowDialog(owner)?","Открывает модальное окно; await ждёт закрытия",["Всегда немодальное","Закрывает owner","Создаёт DataGrid"]],
+["Почему после Show() данные могут обновиться слишком рано?","Show() не ждёт закрытия окна",["PostgreSQL медленный","DataGrid не умеет обновляться","Binding выключен"]],
+["Что такое EF Core?","ORM для работы с БД через C#-объекты",["UI-фреймворк","Язык SQL","Система окон"]],
+["Что такое Database First?","Существующая БД → генерация C# классов",["C# классы → новая БД","Только ручной SQL","UI → БД"]],
+["Что делает Scaffold-DbContext?","Генерирует context и entity-классы из существующей БД",["Запускает Avalonia","Удаляет БД","Создаёт окно"]],
+["Какой пакет EF Core нужен для PostgreSQL?","Npgsql.EntityFrameworkCore.PostgreSQL",["Postgres.Avalonia","EFCore.PostgreSQL.UI","Npgsql.Avalonia"]],
+["Какой стандартный порт PostgreSQL?","5432",["3306","1433","8080"]],
+["Для чего DbConection в данном тесте?","Хранит один static DB context/connection для приложения",["Только XAML","Только команды","Только DataGrid"]],
+["Что означает HasNoKey?","Сущность без ключа; она read-only и SaveChanges для добавления не подходит",["Автоматически создаёт ключ","Удаляет таблицу","Создаёт Window"]],
+["Когда достаточно только SaveChanges()?","Когда entity загружена и отслеживается тем же context",["Всегда","Только для DataGrid","Никогда"]],
+["Что такое NavigationPage?","Стек страниц с навигацией и кнопкой назад",["DataGrid","SQL-таблица","Диалог"]],
+["Как перейти вперёд/назад в NavigationPage?","PushAsync() / PopAsync()",["OpenPage()/ClosePage()","Go()/Back()","Show()/Hide()"]],
+["Когда удобно обновлять данные страницы?","В OnNavigatedTo — при каждом возвращении/активации страницы",["Только в Main()","Только при сборке","Никогда"]],
+["Какой элемент используется для Drawer?","DrawerPage",["DrawerWindow","SideControlOnly","NavigationDrawerGrid"]]
+];
+
+let mode="",questions=[],index=0,score=0,answered=false,timer=null,time=15,wrong=[];
+const $=id=>document.getElementById(id);
+function show(id){["home","quiz","resultCard"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function start(m){
+ mode=m; index=0; score=0; wrong=[];
+ questions=m==="exam"?shuffle(data).slice(0,20):data;
+ show("quiz"); render();
+}
+function render(){
+ answered=false; clearInterval(timer);
+ const item=questions[index]; $("counter").textContent=`${index+1} / ${questions.length}`;
+ $("timer").textContent=mode==="exam"?`${time=15} сек`:"";
+ $("question").textContent=item[0]; $("feedback").textContent="";
+ $("nextBtn").classList.add("hidden");
+ const opts=shuffle([item[1],...item[2]]);
+ $("options").innerHTML="";
+ opts.forEach(o=>{
+  const b=document.createElement("button"); b.className="option"; b.textContent=o;
+  b.addEventListener("click",()=>answer(b,o,item[1])); $("options").appendChild(b);
+ });
+ if(mode==="exam") timer=setInterval(()=>{time--; $("timer").textContent=time+" сек"; if(time<=0) answer(null,null,item[1],true)},1000);
+}
+function answer(btn,choice,correct,timeout=false){
+ if(answered)return; answered=true; clearInterval(timer);
+ [...$("options").children].forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add("correct")});
+ if(choice===correct){score++; $("feedback").textContent="✅ Правильно";}
+ else {if(btn)btn.classList.add("wrong");wrong.push({q:questions[index][0],a:correct});$("feedback").textContent=timeout?"⏰ Время вышло":"❌ Неправильно";}
+ $("nextBtn").classList.remove("hidden");
+}
+function next(){index++; if(index<questions.length)render(); else finish()}
+function finish(){
+ show("resultCard");
+ $("result").textContent=mode==="exam"?`Результат: ${score} / 20`:`Пройдено: ${score} / 40`;
+ $("mistakes").innerHTML=wrong.length?`Ошибки: ${wrong.length}<br><br>`+wrong.map(x=>`<b>${x.q}</b><br>Ответ: ${x.a}`).join("<br><br>"):"🔥 Ошибок нет!";
+}
+$("studyBtn").onclick=()=>start("study"); $("examBtn").onclick=()=>start("exam");
+$("nextBtn").onclick=next; $("againBtn").onclick=()=>start(mode);
+$("homeBtn").onclick=()=>show("home");
+</script>
+</body>
+</html>
